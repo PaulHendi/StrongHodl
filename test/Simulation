@@ -1,0 +1,622 @@
+const strongHODL = artifacts.require("strongHODL");
+const Pair = artifacts.require('Pair.sol');
+const Router = artifacts.require('Router.sol');
+
+contract("Simulation", async accounts => {
+
+
+
+
+
+	it("Deploy contract", async () => {
+	
+	    const strongHODLToken = await strongHODL.deployed();
+	    let balance = await strongHODLToken.balanceOf.call(strongHODLToken.address);
+    	console.log(`Balance of owner : ${parseInt(balance.valueOf()).toString()}`);    	
+    		    
+    	balance = await strongHODLToken.balanceOf.call(accounts[0]);
+    	console.log(`Balance of owner : ${parseInt(balance.valueOf()).toString()}`);    	
+    		    
+	});
+	
+	
+	
+  
+    it("Check Exclusion", async () => {
+        const SHP = await strongHODL.deployed();   
+    	var SHP_excluded_reward = await SHP.isExcludedFromReward.call(SHP.address);
+    	var SHP_excluded_fee = await SHP.isExcludedFromFee.call(SHP.address);    
+    	
+	    console.log(`Contract reward : ${SHP_excluded_reward.toString()}, fee : ${SHP_excluded_fee.toString()}`); 	    	            	            
+	    
+	    
+        const burn_address = "0x3141592653589793238462643383279502884197" ;
+     	SHP_excluded_reward = await SHP.isExcludedFromReward.call(burn_address);
+    	SHP_excluded_fee = await SHP.isExcludedFromFee.call(burn_address);    
+    	
+	    console.log(`Contract reward : ${SHP_excluded_reward.toString()}, fee : ${SHP_excluded_fee.toString()}`); 
+	    
+	    const owner = accounts[0]
+     	SHP_excluded_reward = await SHP.isExcludedFromReward.call(owner);
+    	SHP_excluded_fee = await SHP.isExcludedFromFee.call(owner);    
+    	
+	    console.log(`Contract reward : ${SHP_excluded_reward.toString()}, fee : ${SHP_excluded_fee.toString()}`); 
+	    
+	    const greg = accounts[1]
+     	SHP_excluded_reward = await SHP.isExcludedFromReward.call(greg);
+    	SHP_excluded_fee = await SHP.isExcludedFromFee.call(greg);    
+    	
+	    console.log(`Contract reward : ${SHP_excluded_reward.toString()}, fee : ${SHP_excluded_fee.toString()}`); 		    	 	    	    	            	            
+	    
+    });	  	
+	
+	
+	
+	
+    it("Adding liquidity (After DxSale)", async () => {
+    
+    const owner = accounts[0];
+   
+    
+    const strongHODLToken = await strongHODL.deployed();
+    // Pancakeswap V2 router 
+    const router = await Router.at('0x10ED43C718714eb63d5aA57B78B54704E256024E'); 
+    // Main Net : 0x10ED43C718714eb63d5aA57B78B54704E256024E
+    // Test Net : 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3     
+    
+    // SHP/WBNB pair was defined in the contract => Getting the address
+    const pair_address = await strongHODLToken.getPairAddress.call();  
+    const pair = await Pair.at(pair_address);
+    
+    // Get the balance
+    let balance = await pair.balanceOf(owner); 
+    console.log(`balance LP: ${balance.toString()}`);  
+				
+    // Owner adds liquidity => Need to approve
+    await strongHODLToken.approve.sendTransaction(router.address, "1000000000000000000000",
+    							{
+						            from: owner,
+						            gas: 4000000,
+          						});
+        
+    console.log('erc20 approved');       
+        
+   
+    
+    // Owner adds liquidity 10BNB, 10*10 token
+	await router.addLiquidityETH(
+      				strongHODLToken.address,
+			        "1000000000000000000000",
+		            "1000000000000000000000",
+	                "10000000000000000000", 
+			        owner,
+			        Math.floor(Date.now() / 1000) + 60 * 10,
+			        {
+			            from: owner,
+			            gas: 4000000,
+            			value: "10000000000000000000"
+      				});
+     console.log('liquidity added');
+        
+      
+    // Get the balance of LP of the owner
+    balance = await pair.balanceOf(owner); 
+    console.log(`balance LP: ${balance.toString()}`); 
+              
+       
+    });
+    
+    
+    async function buySHP(buyer, tokenAmount, SHP) {
+    
+    	
+    // Main Net : 0x10ED43C718714eb63d5aA57B78B54704E256024E
+    // Test Net : 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3     
+	    const router = await Router.at('0x10ED43C718714eb63d5aA57B78B54704E256024E'); 
+	    var path = new Array(2);
+	    // Main Net : 0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c
+	    // Test Net : 0x094616f0bdfb0b526bd735bf66eca0ad254ca81f
+        path[0] = "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c"; // WBNB 
+        path[1] = SHP.address;
+	    
+	    
+	    var amounts = await router.getAmountsIn.call(tokenAmount, path);
+		var necessaryBNB = parseInt(amounts[0].valueOf()).toString();
+	    
+	    
+    	
+        
+		await router.swapETHForExactTokens(
+			tokenAmount,
+	        path,
+            buyer,
+            Math.floor(Date.now() / 1000) + 60 * 10, {
+            	from: buyer,
+            	value: necessaryBNB
+            });    
+    
+    }    
+    
+    
+    async function buySHP2(buyer, BNBamount, SHP) {
+    
+    // Main Net : 0x10ED43C718714eb63d5aA57B78B54704E256024E
+    // Test Net : 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3     
+	    const router = await Router.at('0x10ED43C718714eb63d5aA57B78B54704E256024E'); 
+    	var path = new Array(2);
+	    // Main Net : 0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c
+	    // Test Net : 0x094616f0bdfb0b526bd735bf66eca0ad254ca81f    	
+        path[0] = "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c"; // WBNB 
+        path[1] = SHP.address;
+        
+		await router.swapExactETHForTokens(
+			0,
+	        path,
+            buyer,
+            Math.floor(Date.now() / 1000) + 60 * 10, {
+            	from: buyer,
+            	value: BNBamount
+            });    
+    
+    }
+    
+    
+        
+    it("Greg buys SHP", async () => {
+        
+        const strongHODLToken = await strongHODL.deployed();    
+    	const greg = accounts[1];
+		const bob = accounts[2];
+		const alice = accounts[3];
+		const carla = accounts[4];  
+		
+		balance = await strongHODLToken.balanceOf.call(greg);
+		console.log(`Balance of greg before : ${parseInt(balance.valueOf()).toString()}`); 
+		
+		
+
+		//var BNB_to_spend = "1000000000000000";        
+		//await buySHP2(greg, BNB_to_spend, strongHODLToken);
+		var SHP_to_buy = "10000000000000";
+		await buySHP(greg, SHP_to_buy, strongHODLToken);
+
+		balance = await strongHODLToken.balanceOf.call(greg);
+		console.log(`Balance of greg after : ${parseInt(balance.valueOf()).toString()}`);  
+    });
+    
+    
+    it("Bob buys SHP", async () => {
+        
+        const strongHODLToken = await strongHODL.deployed();    
+		const greg = accounts[1];
+		const bob = accounts[2];
+ 
+		
+		balance = await strongHODLToken.balanceOf.call(bob);
+		console.log(`Balance of bob before : ${parseInt(balance.valueOf()).toString()}`); 
+		var SHP_to_buy = "100000000000000";
+		await buySHP(bob, SHP_to_buy, strongHODLToken);
+		balance = await strongHODLToken.balanceOf.call(bob);
+		console.log(`Balance of bob after : ${parseInt(balance.valueOf()).toString()}`); 
+		balance = await strongHODLToken.balanceOf.call(greg);
+		console.log(`Balance of greg after : ${parseInt(balance.valueOf()).toString()}`); 		 
+    }); 
+    
+    
+    it("Log contract", async () => {
+        const SHP = await strongHODL.deployed();    
+    	var nbHodler = await SHP.getNumberOfhodler.call();
+		console.log(`Nb hodler : ${parseInt(nbHodler.valueOf()).toString()}`);  
+    	
+    	var totalFees = await SHP.totalFees.call();
+		console.log(`Total fees : ${parseInt(totalFees.valueOf()).toString()}`);  
+		    	
+    	var totalBuyerFees = await SHP.totalBuyerFees.call();
+		console.log(`Total Buyer fees : ${parseInt(totalBuyerFees.valueOf()).toString()}`);  
+		    	
+    	var totalSellerFees = await SHP.totalSellerFees.call();
+		console.log(`Total seller fees : ${parseInt(totalSellerFees.valueOf()).toString()}`);  
+		    	
+    	var totalBurn = await SHP.totalBurn.call();
+		console.log(`Total burn : ${parseInt(totalBurn.valueOf()).toString()}`);      	
+    	
+		var balanceToken = await SHP.balanceOf.call(SHP.address);
+		console.log(`Balance of token in contract : ${parseInt(balanceToken.valueOf()).toString()}`);  
+		
+		
+    	const pair_address = await SHP.getPairAddress.call();  
+	    const pair = await Pair.at(pair_address);		
+    	var balanceLPToken = await pair.balanceOf(SHP.address); 
+	    console.log(`balance LP in contract : ${balanceLPToken.toString()}`); 	
+	    
+		var balanceBNB = await SHP.balanceBNB.call();	
+		console.log(`Balance of BNB in contract : ${parseInt(balanceBNB.valueOf()).toString()}`);  	
+    });
+    
+    
+     it("Alice buys SHP", async () => {
+        
+        const strongHODLToken = await strongHODL.deployed();    
+		const greg = accounts[1];
+		const alice = accounts[3];
+ 
+		
+		balance = await strongHODLToken.balanceOf.call(alice);
+		console.log(`Balance of alice before : ${parseInt(balance.valueOf()).toString()}`); 
+		var SHP_to_buy = "100000000000000";
+		await buySHP(alice, SHP_to_buy, strongHODLToken);
+		balance = await strongHODLToken.balanceOf.call(alice);
+		console.log(`Balance of alice after : ${parseInt(balance.valueOf()).toString()}`); 
+		balance = await strongHODLToken.balanceOf.call(greg);
+		console.log(`Balance of greg after : ${parseInt(balance.valueOf()).toString()}`); 		 
+    }); 
+    
+    
+    it("Log contract", async () => {
+        const SHP = await strongHODL.deployed();    
+    	var nbHodler = await SHP.getNumberOfhodler.call();
+		console.log(`Nb hodler : ${parseInt(nbHodler.valueOf()).toString()}`);  
+    	
+    	var totalFees = await SHP.totalFees.call();
+		console.log(`Total fees : ${parseInt(totalFees.valueOf()).toString()}`);  
+		    	
+    	var totalBuyerFees = await SHP.totalBuyerFees.call();
+		console.log(`Total Buyer fees : ${parseInt(totalBuyerFees.valueOf()).toString()}`);  
+		    	
+    	var totalSellerFees = await SHP.totalSellerFees.call();
+		console.log(`Total seller fees : ${parseInt(totalSellerFees.valueOf()).toString()}`);  
+		    	
+    	var totalBurn = await SHP.totalBurn.call();
+		console.log(`Total burn : ${parseInt(totalBurn.valueOf()).toString()}`);      	
+    	
+		var balanceToken = await SHP.balanceOf.call(SHP.address);
+		console.log(`Balance of token in contract : ${parseInt(balanceToken.valueOf()).toString()}`);  
+		
+		
+    	const pair_address = await SHP.getPairAddress.call();  
+	    const pair = await Pair.at(pair_address);		
+    	var balanceLPToken = await pair.balanceOf(SHP.address); 
+	    console.log(`balance LP in contract : ${balanceLPToken.toString()}`); 	
+	    
+		var balanceBNB = await SHP.balanceBNB.call();	
+		console.log(`Balance of BNB in contract : ${parseInt(balanceBNB.valueOf()).toString()}`);  	
+    });
+  
+    
+     it("Alice buys SHP", async () => {
+        
+        const strongHODLToken = await strongHODL.deployed();    
+		const greg = accounts[1];
+		const alice = accounts[3];
+ 
+		
+		balance = await strongHODLToken.balanceOf.call(alice);
+		console.log(`Balance of alice before : ${parseInt(balance.valueOf()).toString()}`); 
+		var SHP_to_buy = "300000000000000";
+		await buySHP(alice, SHP_to_buy, strongHODLToken);
+		balance = await strongHODLToken.balanceOf.call(alice);
+		console.log(`Balance of alice after : ${parseInt(balance.valueOf()).toString()}`); 
+		balance = await strongHODLToken.balanceOf.call(greg);
+		console.log(`Balance of greg after : ${parseInt(balance.valueOf()).toString()}`); 		 
+    }); 
+            
+    
+    
+    it("Balance burn address", async () => {
+            const SHP = await strongHODL.deployed();   
+
+        const burn_address = "0x3141592653589793238462643383279502884197" ;
+		var balanceToken = await SHP.balanceOf.call(burn_address);
+		console.log(`Balance of token : ${parseInt(balanceToken.valueOf()).toString()}`);    	            	            
+	    
+    });	  
+    
+    
+  
+    it("Log contract", async () => {
+        const SHP = await strongHODL.deployed();    
+    	var nbHodler = await SHP.getNumberOfhodler.call();
+		console.log(`Nb hodler : ${parseInt(nbHodler.valueOf()).toString()}`);  
+    	
+    	var totalFees = await SHP.totalFees.call();
+		console.log(`Total fees : ${parseInt(totalFees.valueOf()).toString()}`);  
+		    	
+    	var totalBuyerFees = await SHP.totalBuyerFees.call();
+		console.log(`Total Buyer fees : ${parseInt(totalBuyerFees.valueOf()).toString()}`);  
+		    	
+    	var totalSellerFees = await SHP.totalSellerFees.call();
+		console.log(`Total seller fees : ${parseInt(totalSellerFees.valueOf()).toString()}`);  
+		    	
+    	var totalBurn = await SHP.totalBurn.call();
+		console.log(`Total burn : ${parseInt(totalBurn.valueOf()).toString()}`);      	
+    	
+		var balanceToken = await SHP.balanceOf.call(SHP.address);
+		console.log(`Balance of token in contract : ${parseInt(balanceToken.valueOf()).toString()}`);  
+		
+		
+    	const pair_address = await SHP.getPairAddress.call();  
+	    const pair = await Pair.at(pair_address);		
+    	var balanceLPToken = await pair.balanceOf(SHP.address); 
+	    console.log(`balance LP in contract : ${balanceLPToken.toString()}`); 	
+	    
+		var balanceBNB = await SHP.balanceBNB.call();	
+		console.log(`Balance of BNB in contract : ${parseInt(balanceBNB.valueOf()).toString()}`);  	
+		
+		var amountLiquidity = await SHP.getAmountForLiquidity.call();
+		console.log(`Amount for liquidity : ${parseInt(amountLiquidity.valueOf()).toString()}`);  
+		
+		var amountBurn = await SHP.getAmountForBurn.call();
+		console.log(`Amount for burn : ${parseInt(amountBurn.valueOf()).toString()}`);  
+						
+		
+    });       
+    
+    
+    
+     it("Carla buys SHP", async () => {
+        
+        const strongHODLToken = await strongHODL.deployed();    
+		const greg = accounts[1];
+		const carla = accounts[4];
+ 
+		
+		balance = await strongHODLToken.balanceOf.call(carla);
+		console.log(`Balance of Carla before : ${parseInt(balance.valueOf()).toString()}`); 
+		var SHP_to_buy = "300000000000000";
+		for (let i = 0; i < 10; i++) {
+			await buySHP(carla, SHP_to_buy, strongHODLToken);
+			balance = await strongHODLToken.balanceOf.call(carla);
+			console.log(`Balance of Carla after : ${parseInt(balance.valueOf()).toString()}`); 
+		}
+		balance = await strongHODLToken.balanceOf.call(greg);
+		console.log(`Balance of greg after : ${parseInt(balance.valueOf()).toString()}`); 		 
+    }); 
+    
+    it("Balance burn address", async () => {
+            const SHP = await strongHODL.deployed();   
+
+        const burn_address = "0x3141592653589793238462643383279502884197" ;
+		var balanceToken = await SHP.balanceOf.call(burn_address);
+		console.log(`Balance of token : ${parseInt(balanceToken.valueOf()).toString()}`);    	            	            
+	    
+    });	      
+        
+        
+        
+    it("Log contract", async () => {
+        const SHP = await strongHODL.deployed();    
+    	var nbHodler = await SHP.getNumberOfhodler.call();
+		console.log(`Nb hodler : ${parseInt(nbHodler.valueOf()).toString()}`);  
+    	
+    	var totalFees = await SHP.totalFees.call();
+		console.log(`Total fees : ${parseInt(totalFees.valueOf()).toString()}`);  
+		    	
+    	var totalBuyerFees = await SHP.totalBuyerFees.call();
+		console.log(`Total Buyer fees : ${parseInt(totalBuyerFees.valueOf()).toString()}`);  
+		    	
+    	var totalSellerFees = await SHP.totalSellerFees.call();
+		console.log(`Total seller fees : ${parseInt(totalSellerFees.valueOf()).toString()}`);  
+		    	
+    	var totalBurn = await SHP.totalBurn.call();
+		console.log(`Total burn : ${parseInt(totalBurn.valueOf()).toString()}`);      	
+    	
+		var balanceToken = await SHP.balanceOf.call(SHP.address);
+		console.log(`Balance of token in contract : ${parseInt(balanceToken.valueOf()).toString()}`);  
+		
+		
+    	const pair_address = await SHP.getPairAddress.call();  
+	    const pair = await Pair.at(pair_address);		
+    	var balanceLPToken = await pair.balanceOf(SHP.address); 
+	    console.log(`balance LP in contract : ${balanceLPToken.toString()}`); 	
+	    
+		var balanceBNB = await SHP.balanceBNB.call();	
+		console.log(`Balance of BNB in contract : ${parseInt(balanceBNB.valueOf()).toString()}`);  	
+		
+		var amountLiquidity = await SHP.getAmountForLiquidity.call();
+		console.log(`Amount for liquidity : ${parseInt(amountLiquidity.valueOf()).toString()}`);  
+		
+		var amountBurn = await SHP.getAmountForBurn.call();
+		console.log(`Amount for burn : ${parseInt(amountBurn.valueOf()).toString()}`);  
+						
+		
+    });   
+    
+    
+    
+    
+     it("Johnny buys SHP", async () => {
+        
+        const strongHODLToken = await strongHODL.deployed();    
+		const greg = accounts[1];
+		const johnny = accounts[4];
+ 
+		
+		balance = await strongHODLToken.balanceOf.call(johnny);
+		console.log(`Balance of johnny before : ${parseInt(balance.valueOf()).toString()}`); 
+		var SHP_to_buy = "300000000000000";
+		for (let i = 0; i < 7; i++) {
+			await buySHP(johnny, SHP_to_buy, strongHODLToken);
+			balance = await strongHODLToken.balanceOf.call(johnny);
+			console.log(`Balance of johnny after : ${parseInt(balance.valueOf()).toString()}`); 
+		}
+		balance = await strongHODLToken.balanceOf.call(greg);
+		console.log(`Balance of greg after : ${parseInt(balance.valueOf()).toString()}`); 		 
+    }); 
+    
+    it("Balance burn address", async () => {
+            const SHP = await strongHODL.deployed();   
+
+        const burn_address = "0x3141592653589793238462643383279502884197" ;
+		var balanceToken = await SHP.balanceOf.call(burn_address);
+		console.log(`Balance of token : ${parseInt(balanceToken.valueOf()).toString()}`);    	            	            
+	    
+    });	      
+        
+        
+        
+    it("Log contract", async () => {
+        const SHP = await strongHODL.deployed();    
+    	var nbHodler = await SHP.getNumberOfhodler.call();
+		console.log(`Nb hodler : ${parseInt(nbHodler.valueOf()).toString()}`);  
+    	
+    	var totalFees = await SHP.totalFees.call();
+		console.log(`Total fees : ${parseInt(totalFees.valueOf()).toString()}`);  
+		    	
+    	var totalBuyerFees = await SHP.totalBuyerFees.call();
+		console.log(`Total Buyer fees : ${parseInt(totalBuyerFees.valueOf()).toString()}`);  
+		    	
+    	var totalSellerFees = await SHP.totalSellerFees.call();
+		console.log(`Total seller fees : ${parseInt(totalSellerFees.valueOf()).toString()}`);  
+		    	
+    	var totalBurn = await SHP.totalBurn.call();
+		console.log(`Total burn : ${parseInt(totalBurn.valueOf()).toString()}`);      	
+    	
+		var balanceToken = await SHP.balanceOf.call(SHP.address);
+		console.log(`Balance of token in contract : ${parseInt(balanceToken.valueOf()).toString()}`);  
+		
+		
+    	const pair_address = await SHP.getPairAddress.call();  
+	    const pair = await Pair.at(pair_address);		
+    	var balanceLPToken = await pair.balanceOf(SHP.address); 
+	    console.log(`balance LP in contract : ${balanceLPToken.toString()}`); 	
+	    
+		var balanceBNB = await SHP.balanceBNB.call();	
+		console.log(`Balance of BNB in contract : ${parseInt(balanceBNB.valueOf()).toString()}`);  	
+		
+		var amountLiquidity = await SHP.getAmountForLiquidity.call();
+		console.log(`Amount for liquidity : ${parseInt(amountLiquidity.valueOf()).toString()}`);  
+		
+		var amountBurn = await SHP.getAmountForBurn.call();
+		console.log(`Amount for burn : ${parseInt(amountBurn.valueOf()).toString()}`);  
+						
+		
+    });    
+    
+           
+           
+              
+    async function sellSHP(seller, tokenAmount, SHP) {
+    
+    	
+    // Main Net : 0x10ED43C718714eb63d5aA57B78B54704E256024E
+    // Test Net : 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3     
+	    const router = await Router.at('0x10ED43C718714eb63d5aA57B78B54704E256024E'); 
+	    var path = new Array(2);
+	    // Main Net : 0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c
+	    // Test Net : 0x094616f0bdfb0b526bd735bf66eca0ad254ca81f
+        path[0] = SHP.address;
+        path[1] = "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c"; // WBNB 
+
+	    
+	    // Check path order
+	    
+	    // Check below
+	    var amounts = await router.getAmountsOut.call(tokenAmount, path);
+		var outBNB = parseInt(amounts[1].valueOf()).toString();
+		
+		console.log(`Input token : ${tokenAmount}`);  
+		console.log(`Output BNB : ${outBNB}`);  
+	    
+	    
+	    // Seller adds liquidity => Need to approve
+    	await SHP.approve.sendTransaction(router.address, tokenAmount,
+    							{
+						            from: seller,
+						            gas: 4000000,
+          						});
+        
+    	console.log('bep20 approved');   
+	    
+    	/*
+        // Check necessity of passing from
+		await router.swapExactTokensForETH(
+			tokenAmount,
+			outBNB,
+	        path,
+            seller,
+            Math.floor(Date.now() / 1000) + 60 * 10,
+    							{
+						            from: seller
+          						});    */
+    
+    
+    }
+    
+    
+    
+
+                 
+    
+    
+     it("Johnny sells SHP", async () => {
+        
+        const strongHODLToken = await strongHODL.deployed();    
+		const greg = accounts[1];
+		const johnny = accounts[4];
+ 
+		
+		balance = await strongHODLToken.balanceOf.call(johnny);
+		console.log(`Balance of johnny before : ${parseInt(balance.valueOf()).toString()}`); 
+		var SHP_to_sell = "300000000000000";
+		
+		await sellSHP(johnny, SHP_to_sell, strongHODLToken);
+		balance = await strongHODLToken.balanceOf.call(johnny);
+		console.log(`Balance of johnny after : ${parseInt(balance.valueOf()).toString()}`); 
+		
+		balance = await strongHODLToken.balanceOf.call(greg);
+		console.log(`Balance of greg after : ${parseInt(balance.valueOf()).toString()}`); 		 
+    });    
+    
+    
+    
+    it("Log contract", async () => {
+        const SHP = await strongHODL.deployed();    
+    	var nbHodler = await SHP.getNumberOfhodler.call();
+		console.log(`Nb hodler : ${parseInt(nbHodler.valueOf()).toString()}`);  
+    	
+    	var totalFees = await SHP.totalFees.call();
+		console.log(`Total fees : ${parseInt(totalFees.valueOf()).toString()}`);  
+		    	
+    	var totalBuyerFees = await SHP.totalBuyerFees.call();
+		console.log(`Total Buyer fees : ${parseInt(totalBuyerFees.valueOf()).toString()}`);  
+		    	
+    	var totalSellerFees = await SHP.totalSellerFees.call();
+		console.log(`Total seller fees : ${parseInt(totalSellerFees.valueOf()).toString()}`);  
+		    	
+    	var totalBurn = await SHP.totalBurn.call();
+		console.log(`Total burn : ${parseInt(totalBurn.valueOf()).toString()}`);      	
+    	
+		var balanceToken = await SHP.balanceOf.call(SHP.address);
+		console.log(`Balance of token in contract : ${parseInt(balanceToken.valueOf()).toString()}`);  
+		
+		
+    	const pair_address = await SHP.getPairAddress.call();  
+	    const pair = await Pair.at(pair_address);		
+    	var balanceLPToken = await pair.balanceOf(SHP.address); 
+	    console.log(`balance LP in contract : ${balanceLPToken.toString()}`); 	
+	    
+		var balanceBNB = await SHP.balanceBNB.call();	
+		console.log(`Balance of BNB in contract : ${parseInt(balanceBNB.valueOf()).toString()}`);  	
+		
+		var amountLiquidity = await SHP.getAmountForLiquidity.call();
+		console.log(`Amount for liquidity : ${parseInt(amountLiquidity.valueOf()).toString()}`);  
+		
+		var amountBurn = await SHP.getAmountForBurn.call();
+		console.log(`Amount for burn : ${parseInt(amountBurn.valueOf()).toString()}`);  
+						
+		
+    });        
+
+    
+    // TODO :
+    // Check diff between total fees and total buyer fees
+    // Everything is OK : BuyerFees include fees added to liquidity (Hence 2 times higher)
+        
+    
+    
+    
+    
+    
+    
+});
+

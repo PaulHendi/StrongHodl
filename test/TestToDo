@@ -1,0 +1,55 @@
+Test : 
+
+Unit test : 
+	DxSale Flag => Max transaction amount, no fees, etc.
+	
+Check setter : 
+	Set max transaction
+	Set buyer fee
+	Set seller fee
+	Set buyback
+	Set Swap and liquify
+	
+
+
+Whole contract Test : 
+
+Params to be changes for testing :
+
+	BNB min for buy back : 0.01 BNB
+	Max hodler : 10
+
+
+_ Deploy contract : 
+	Keep token in contract 6 trillion
+	Send token to owner 4 trillion
+	
+_ Add liquidity : 
+	Normally this is done by DxSale => need liquidity for swaps
+	Transactions will be made without passing by the liquidity pool
+	Buy => Transfer
+	Sell => Transfer From 
+	
+	
+_ Keep track of : 
+	_ Nb of hodlers
+	_ total fees
+	_ Seller fees
+	_ Buyer fees
+	_ total burn
+	_ Balance of token in contract
+	_ Balance of BNB in contract	
+	
+_ Perform a certain amount of transaction between 2, 3, 4 and 5 users. Then after some time augment the number of participants
+
+_ Check if auto LP works
+
+_ Check if auto Buyback works
+
+_ Check if the burn function works		
+
+_ Check balance of LP tokens
+
+
+
+

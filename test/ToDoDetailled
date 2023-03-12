@@ -1,0 +1,46 @@
+
+
+Whole contract Test : 
+
+Params to be changes for testing :
+
+	BNB min for buy back : 0.01 BNB
+	Max hodler : 10
+	Token min to add to liquidity : 1billion tokens (10**9 x 10**10)
+
+
+_ Deploy contract : 
+	Keep token in contract 6 trillion
+	Send token to owner 4 trillion
+	
+_ Add liquidity : 
+	Normally this is done by DxSale => need liquidity for swaps
+	100 billion (10**11 x 10**10) added to liquidity plus 10BNB (10 x 10**18)
+	=> 10 BNB = 10*11 SHP
+	=> 1 BNB = 10**10 SHP
+	
+_ Buys of 0.1 BNB (or 10**9 SHP) => *BuyerFee = 20*10**6 SHP (50 swaps necessary for min liquidity add)
+_ Sells of 0.1 BNB 	(or 10**9 SHP) => *SellerFee = 40*10**6 SHP (25 swaps necessary for min liquidity add)
+
+
+1er Test : 
+	Perform transactions until adding liquidity
+	Meanwhile Keep track of : 
+		_ Nb of hodlers
+		_ total fees
+		_ Seller fees
+		_ Buyer fees
+		_ total burn
+		_ Balance of token in contract
+		_ Balance of BNB in contract	
+	
+_ Perform a certain amount of transaction between 2, 3, 4 and 5 users. Then after some time augment the number of participants
+
+_ Check if auto LP works
+
+_ Check if auto Buyback works
+
+_ Check if the burn function works		
+
+_ Check balance of LP tokens
+

@@ -1,0 +1,80 @@
+const strongHODL = artifacts.require("strongHODL");
+
+contract("First test", async accounts => {
+
+
+
+  it("Checking symbol", async () => {
+    const instance = await strongHODL.deployed();
+    const symbol = await instance.symbol.call();
+    assert.equal(symbol.valueOf(), "TC");
+  });
+  
+  it("printing symbol", async () => {
+    const instance = await strongHODL.deployed();
+    const symbol = await instance.symbol.call();
+    console.log(symbol.valueOf());
+  });
+  
+    
+  it("printing balance account 0", async () => {
+    const instance = await strongHODL.deployed();
+    let balance;
+    
+    balance = await instance.balanceOf.call(accounts[0]);
+    console.log(parseInt(balance.valueOf()));
+    balance = await instance.balanceOf.call(accounts[1]);
+    console.log(parseInt(balance.valueOf()));
+
+    });
+    
+    
+   it("transaction", async () => {
+    const instance = await strongHODL.deployed();
+    await instance.transfer(accounts[1], "100000000000000000000", { from: accounts[0] });
+
+  });
+  
+  
+   it("printing balance account", async () => {
+    const instance = await strongHODL.deployed();
+    let balance; 
+    balance = await instance.balanceOf.call(accounts[0]);
+    console.log(parseInt(balance.valueOf()));
+    balance = await instance.balanceOf.call(accounts[1]);
+    console.log(parseInt(balance.valueOf()));    
+
+    });
+  
+
+   it("Nb of tokens of contract", async () => {
+    const instance = await strongHODL.deployed();
+    const contract_address = instance.address;
+    console.log(contract_address);
+    let balance = await instance.balanceOf.call(contract_address);
+    console.log(parseInt(balance.valueOf()));
+    });
+    
+    it("BNB of contract", async () => {
+    const instance = await strongHODL.deployed();
+    const contract_address = instance.address;
+
+    let balance = await instance.balanceBNB.call();
+    console.log(parseInt(balance.valueOf()));
+    });
+    
+    it("Send BNB to contract", async () => {
+    const instance = await strongHODL.deployed();
+    const contract_address = instance.address;
+    instance.send(1000000000000000000, {from: accounts[0]})
+    let balance = await instance.balanceBNB.call();
+    console.log(parseInt(balance.valueOf()));
+    });
+    
+    
+    it("Add liquidity", async () => {
+    const instance = await strongHODL.deployed();
+    await instance.addLiquiditySimu.call();
+    });
+    
+});
